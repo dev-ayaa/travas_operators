@@ -6,11 +6,12 @@ import (
 )
 
 type Repo interface {
-	InsertUser(user model.Operator) (int, primitive.ObjectID, error)
+	InsertUser(user *model.Operator) (int, primitive.ObjectID, error)
 	VerifyUser(userID primitive.ObjectID) (bool, error)
 	UpdateInfo(userID primitive.ObjectID, tk map[string]string) (bool, error)
 
-	InsertPackage(tour model.Tour) (bool, error)
-
+	InsertPackage(tour *model.Tour) (bool, error)
+	LoadTour(tourID primitive.ObjectID) (primitive.M, error)
+	ValidTourRequest() ([]primitive.M, error)
 	FindTourGuide(operatorID primitive.ObjectID) ([]primitive.M, error)
 }

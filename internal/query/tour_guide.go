@@ -4,6 +4,7 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
@@ -12,11 +13,18 @@ func (op *OperatorDB) FindTourGuide(operatorID primitive.ObjectID) ([]primitive.
 	defer cancel()
 	filter := bson.D{{Key: "operator_id", Value: operatorID}}
 
-	cursor, err := TourData(op.DB, "tour_guide").Find(ctx, filter)
+	cursor, err := TourGuideData(op.DB, "tour_guide").Find(ctx, filter)
 	if err != nil {
 		op.App.ErrorLogger.Fatalf("error while searching for data : %v \n", err)
 
 	}
+	defer func(cursor *mongo.Cursor, ctx context.Context) {
+		err := cursor.Close(ctx)
+		if err != nil {
+			return
+		}
+	}(cursor, ctx)
+
 	var res []bson.M
 	if err := cursor.All(ctx, &res); err != nil {
 		op.App.ErrorLogger.Fatal(err)
