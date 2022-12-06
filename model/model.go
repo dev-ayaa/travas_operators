@@ -53,3 +53,20 @@ type UserInfo struct {
 	Email    string
 	Password string
 }
+
+type Tourist struct {
+	ID            primitive.ObjectID `bson:"_id"`
+	FirstName     string             `bson:"first_name" Usage:"required,alpha,omitempty"`
+	LastName      string             `bson:"last_name" Usage:"required,alpha,omitempty"`
+	Email         string             `bson:"email" Usage:"required,alphanumeric"`
+	Password      string             `bson:"password" Usage:"required"`
+	CheckPassword string             `bson:"check_password" Usage:"required"`
+	Phone         string             `bson:"phone" Usage:"required"`
+	BookedTours   []Tour             `bson:"booked_tour"`
+	RequestTours  []Tour             `bson:"request_tour"`
+	GeoLocation   string             `bson:"geo_location"`
+	Token         string             `bson:"token" Usage:"jwt"`
+	NewToken      string             `bson:"new_token" Usage:"jwt"`
+	CreatedAt     time.Time          `bson:"created_at" Usage:"datetime"`
+	UpdatedAt     time.Time          `bson:"updated_at" Usage:"datetime"`
+}
