@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/gob"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/travas-io/travas-op/db"
 	"github.com/travas-io/travas-op/internal/config"
 	"github.com/travas-io/travas-op/internal/controller"
+	"github.com/travas-io/travas-op/model"
 	"log"
 	"os/signal"
 
@@ -23,7 +25,9 @@ var app config.Tools
 var validate *validator.Validate
 
 func main() {
-
+	gob.Register(model.UserInfo{})
+	gob.Register(model.Operator{})
+	gob.Register(model.Tour{})
 	err := godotenv.Load()
 	if err != nil {
 		app.ErrorLogger.Fatalf("cannot load up the env file : %v", err)
