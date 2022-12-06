@@ -3,6 +3,11 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -11,11 +16,8 @@ import (
 	"github.com/travas-io/travas-op/internal/query"
 	"github.com/travas-io/travas-op/internal/token"
 	"github.com/travas-io/travas-op/model"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"log"
-	"net/http"
-	"strings"
-	"time"
 )
 
 type Operator struct {
@@ -49,24 +51,29 @@ func (op *Operator) Register() gin.HandlerFunc {
 // of the user
 func (op *Operator) ProcessRegister() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var user model.Operator
-
 		if err := ctx.Request.ParseForm(); err != nil {
 			_ = ctx.AbortWithError(http.StatusBadRequest, gin.Error{Err: err})
 		}
-		user.Email = ctx.Request.Form.Get("email")
-		user.Phone = ctx.Request.Form.Get("phone")
-		user.Password = ctx.Request.Form.Get("password")
-		user.CompanyName = ctx.Request.Form.Get("company_name")
-		user.ConfirmPassword = ctx.Request.Form.Get("check_password")
-		user.CreatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		user.UpdatedAt, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-		user.Token = ""
-		user.NewToken = ""
-		user.ToursList = []model.Tour{}
+		CreatedAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		UpdatedAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		user := &model.Operator{
+			CompanyName:     ctx.Request.Form.Get("company_name"),
+			Email:           ctx.Request.Form.Get("email"),
+			Password:        ctx.Request.Form.Get("password"),
+			ConfirmPassword: ctx.Request.Form.Get("confirm_password"),
+			Phone:           ctx.Request.Form.Get("phone"),
+			TourGuide:       []string{},
+			ToursList:       []model.Tour{},
+			GeoLocation:     "",
+			Token:           "",
+			NewToken:        "",
+			CreatedAt:       CreatedAt,
+			UpdatedAt:       UpdatedAt,
+		}
 
 		if user.Password != user.ConfirmPassword {
 			_ = ctx.AbortWithError(http.StatusInternalServerError, errors.New("passwords did not match"))
+			return
 		}
 
 		user.Password, _ = encrypt.Hash(user.Password)
@@ -189,7 +196,6 @@ func (op *Operator) TourPackagePage() gin.HandlerFunc {
 
 func (op *Operator) ProcessTourPackage() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var tour model.Tour
 		if err := ctx.Request.ParseForm(); err != nil {
 			_ = ctx.AbortWithError(http.StatusBadRequest, gin.Error{Err: err})
 		}
@@ -197,18 +203,28 @@ func (op *Operator) ProcessTourPackage() gin.HandlerFunc {
 		cookieData := sessions.Default(ctx)
 		userInfo := cookieData.Get("info").(model.UserInfo)
 
-		tour.OperatorID = userInfo.ID
-		tour.Title = ctx.Request.Form.Get("title")
-		tour.Destination = strings.TrimSpace(strings.ToLower(ctx.Request.Form.Get("destination")))
-		tour.MeetingPoint = ctx.Request.Form.Get("meeting_point")
-		tour.StartTime = ctx.Request.Form.Get("start_time")
-		tour.StartDate = ctx.Request.Form.Get("start_date")
-		tour.Price = ctx.Request.Form.Get("price")
-		tour.Language = ctx.Request.Form.Get("language")
-		tour.Description = ctx.Request.Form.Get("description")
-		tour.NumberOfTourist = ctx.Request.Form.Get("number_of_tourists")
-		tour.WhatToExpect = append(tour.WhatToExpect, ctx.Request.Form.Get("what_to_expect"))
-		tour.Rules = append(tour.Rules, ctx.Request.Form.Get("rules"))
+		CreatedAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+		UpdatedAt, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
+
+		tour := &model.Tour{
+			ID:              primitive.NewObjectID(),
+			OperatorID:      userInfo.ID,
+			Title:           ctx.Request.Form.Get("title"),
+			Destination:     strings.TrimSpace(strings.ToLower(ctx.Request.Form.Get("destination"))),
+			MeetingPoint:    ctx.Request.Form.Get("meeting_point"),
+			StartTime:       ctx.Request.Form.Get("start_time"),
+			StartDate:       ctx.Request.Form.Get("start_date"),
+			EndDate:         ctx.Request.Form.Get("end_date"),
+			Price:           ctx.Request.Form.Get("price"),
+			Contact:         ctx.Request.Form.Get("contact"),
+			Language:        ctx.Request.Form.Get("language"),
+			NumberOfTourist: ctx.Request.Form.Get("number_of_tourists"),
+			Description:     ctx.Request.Form.Get("description"),
+			WhatToExpect:    append([]string{}, ctx.Request.Form.Get("what_to_expect")),
+			Rules:           append([]string{}, ctx.Request.Form.Get("rules")),
+			CreatedAt:       CreatedAt,
+			UpdatedAt:       UpdatedAt,
+		}
 
 		if err := op.App.Validator.Struct(&tour); err != nil {
 			if _, ok := err.(*validator.InvalidValidationError); !ok {
@@ -217,6 +233,14 @@ func (op *Operator) ProcessTourPackage() gin.HandlerFunc {
 				return
 			}
 		}
+
+		cookieData.Set("tour_id", tour.ID)
+		if err := cookieData.Save(); err != nil {
+			log.Println("error from the session storage")
+			_ = ctx.AbortWithError(http.StatusNotFound, gin.Error{Err: err})
+			return
+		}
+
 		_, err := op.DB.InsertPackage(tour)
 		if err != nil {
 			_ = ctx.AbortWithError(http.StatusBadRequest, gin.Error{Err: err})
@@ -224,20 +248,53 @@ func (op *Operator) ProcessTourPackage() gin.HandlerFunc {
 		}
 
 		ctx.JSONP(http.StatusCreated, gin.H{"Message": "new tour package created"})
-
 	}
 }
 
 func (op *Operator) GetTourGuide() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cookieData := sessions.Default(ctx)
-		userInfo := cookieData.Get("info").(model.UserInfo)
-
+		userInfo, ok := cookieData.Get("info").(model.UserInfo)
+		if !ok {
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
+		}
 		arrRes, err := op.DB.FindTourGuide(userInfo.ID)
 		if err != nil {
 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
 		}
 
 		ctx.JSONP(http.StatusOK, gin.H{"TourGuides": arrRes})
+	}
+}
+
+func (op *Operator) SelectTourGuide() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		//	Todo -> make enquire from the frontend dev before coding this up
+		// find the right selected guide and add that to the tour packages as well
+
+	}
+}
+
+func (op *Operator) PreviewTour() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		cookieData := sessions.Default(ctx)
+		tourID, ok := cookieData.Get("tour_id").(primitive.ObjectID)
+		if !ok {
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find tour id"))
+		}
+		tour, err := op.DB.LoadTour(tourID)
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"tour": tour})
+	}
+}
+
+func (op *Operator) GetTourRequest() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// Todo -> get all the tour request from the tourists collections
+		//	and compare and check for the date with the present date
 	}
 }
