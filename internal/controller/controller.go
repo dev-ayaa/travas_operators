@@ -235,6 +235,7 @@ func (op *Operator) ProcessTourPackage() gin.HandlerFunc {
 		}
 
 		cookieData.Set("tour_id", tour.ID)
+
 		if err := cookieData.Save(); err != nil {
 			log.Println("error from the session storage")
 			_ = ctx.AbortWithError(http.StatusNotFound, gin.Error{Err: err})
@@ -248,31 +249,6 @@ func (op *Operator) ProcessTourPackage() gin.HandlerFunc {
 		}
 
 		ctx.JSONP(http.StatusCreated, gin.H{"Message": "new tour package created"})
-	}
-}
-
-func (op *Operator) GetTourGuide() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		cookieData := sessions.Default(ctx)
-		userInfo, ok := cookieData.Get("info").(model.UserInfo)
-		if !ok {
-			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
-		}
-		arrRes, err := op.DB.FindTourGuide(userInfo.ID)
-		if err != nil {
-			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
-			return
-		}
-
-		ctx.JSONP(http.StatusOK, gin.H{"TourGuides": arrRes})
-	}
-}
-
-func (op *Operator) SelectTourGuide() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		//	Todo -> make enquire from the frontend dev before coding this up
-		// find the right selected guide and add that to the tour packages as well
-
 	}
 }
 
@@ -296,5 +272,6 @@ func (op *Operator) GetTourRequest() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Todo -> get all the tour request from the tourists collections
 		//	and compare and check for the date with the present date
+
 	}
 }
