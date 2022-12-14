@@ -83,7 +83,7 @@ func (op *OperatorDB) UpdateInfo(userID primitive.ObjectID, tk map[string]string
 	return true, nil
 }
 
-// This query below is to get all the valid tour requested by the tourist
+// ValidTourRequest This query below is to get all the valid tour requested by the tourist
 func (op *OperatorDB) ValidTourRequest() ([]primitive.M, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()

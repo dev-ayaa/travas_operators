@@ -12,6 +12,10 @@ type Repo interface {
 
 	InsertPackage(tour *model.Tour) (bool, error)
 	LoadTour(tourID primitive.ObjectID) (primitive.M, error)
+
 	ValidTourRequest() ([]primitive.M, error)
+
+	InsertTourGuide(tg *model.TourGuide) (bool, error)
 	FindTourGuide(operatorID primitive.ObjectID) ([]primitive.M, error)
+	UpdateTourGuide(guideID string) error
 }

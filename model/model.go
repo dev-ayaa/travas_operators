@@ -23,7 +23,7 @@ type Operator struct {
 
 type TourGuide struct {
 	OperatorID primitive.ObjectID `bson:"operator_id" json:"operator_id,omitempty"`
-	ID         primitive.ObjectID `bson:"_id" json:"_id"`
+	ID         string             `bson:"_id" json:"_id"`
 	Name       string             `bson:"name" json:"name"`
 	Bio        string             `bson:"bio" json:"bio"`
 }
