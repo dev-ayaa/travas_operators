@@ -62,7 +62,7 @@ func (op *Operator) ProcessRegister() gin.HandlerFunc {
 			Password:        ctx.Request.Form.Get("password"),
 			ConfirmPassword: ctx.Request.Form.Get("confirm_password"),
 			Phone:           ctx.Request.Form.Get("phone"),
-			TourGuide:       []string{},
+			TourGuideList:   []model.TourGuide{},
 			ToursList:       []model.Tour{},
 			GeoLocation:     "",
 			Token:           "",

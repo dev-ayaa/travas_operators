@@ -1,8 +1,9 @@
 package model
 
 import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Operator struct {
@@ -12,7 +13,7 @@ type Operator struct {
 	Password        string             `bson:"password" Usage:"required" json:"password,omitempty"`
 	ConfirmPassword string             `bson:"confirm_password" Usage:"required" json:"confirm_password,omitempty"`
 	Phone           string             `bson:"phone" Usage:"required" json:"phone,omitempty"`
-	TourGuide       []string           `bson:"guide" json:"guide,omitempty"`
+	TourGuideList   []TourGuide        `bson:"tour_guide_list"`
 	ToursList       []Tour             `bson:"tours_list" json:"tours_list,omitempty"`
 	GeoLocation     string             `bson:"geo_location" json:"geo_location,omitempty"`
 	Token           string             `bson:"token" Usage:"jwt" json:"token,omitempty"`
@@ -41,6 +42,8 @@ type Tour struct {
 	Contact         string             `bson:"contact" json:"contact,omitempty"`
 	Language        string             `bson:"language" json:"language,omitempty"`
 	NumberOfTourist string             `bson:"number_of_tourist" json:"number_of_tourist,omitempty"`
+	ToursGuideLines []string           `bson:"guidelines" json:"guidelines,omitempty"`
+	TourGuide       TourGuide          `bson:"tour_guide" json:"tour_guide,omitempty"`
 	Description     string             `bson:"description" json:"description,omitempty"`
 	WhatToExpect    []string           `bson:"what_to_expect" json:"what_to_expect"`
 	Rules           []string           `bson:"rules" json:"rules"`
