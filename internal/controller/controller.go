@@ -134,7 +134,6 @@ func (op *Operator) LoginPage() gin.HandlerFunc {
 
 // ProcessLogin : this method will help to parse, verify, and as well as authenticate the user
 // login details, and it also helps to generate jwt token for restricted routers
-
 func (op *Operator) ProcessLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if err := ctx.Request.ParseForm(); err != nil {
@@ -180,6 +179,7 @@ func (op *Operator) ProcessLogin() gin.HandlerFunc {
 	}
 }
 
+// VerifyDocument : this will be used to implement the upload of files
 func (op *Operator) VerifyDocument() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		//	todo --> verify document upload by the tour operator
@@ -272,6 +272,12 @@ func (op *Operator) GetTourRequest() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Todo -> get all the tour request from the tourists collections
 		//	and compare and check for the date with the present date
+		requestTours, err := op.DB.ValidTourRequest()
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"tourRequests": requestTours})
 
 	}
 }
